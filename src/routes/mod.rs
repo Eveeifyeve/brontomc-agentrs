@@ -1,9 +1,16 @@
-use axum::Router;
+use axum::{routing::post, Router};
+use server::create_server;
 mod server;
 
-pub async fn main(state: crate::AppState) -> Router<crate::AppState> {
+pub fn main(state: crate::AppState) -> Router {
     Router::new()
-        .route("/", axum::routing::get(root))
+        .with_state(state.clone())
+        .nest("/server", server(state.clone()))
+}
+
+fn server(state: crate::AppState) -> Router {
+    Router::new()
+        .route("/create", post(create_server))
         .with_state(state)
 }
 
