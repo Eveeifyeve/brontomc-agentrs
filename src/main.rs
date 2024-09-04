@@ -1,33 +1,39 @@
+use std::{process::exit, sync::Arc};
+
 use bollard::Docker;
 use redb::Database;
+use tokio::net::TcpListener;
 
-mod docker;
 mod routes;
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub struct AppState {
     pub docker: Docker,
-    pub db: Database,
+    pub db: Arc<Database>,
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // initialize tracing
     tracing_subscriber::fmt::init();
-    let docker = docker::init_docker();
-    let db = Database::create("brontomc.redb").unwrap();
+    let docker = Docker::connect_with_local_defaults().unwrap();
+    let db = Database::open("brontomc-agentrs.db").unwrap();
+
+    if docker.ping().await.is_err() {
+        tracing::error!("Bollard docker daemon failed!");
+        exit(1)
+    }
 
     let app_state = AppState {
-        docker: docker.await.unwrap(),
-        db,
+        docker: docker,
+        db: Arc::new(db),
     };
 
     // build our application with a route
     let app = routes::main(app_state);
 
-    // run our app with hyper, listening globally on port 3000
-    let addr = std::net::SocketAddr::from(([0, 0, 0, 0], 3000));
-    let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
+    let listener = TcpListener::bind("127.0.0.1:3000").await?;
+    tracing::debug!("listening on {}", listener.local_addr().unwrap());
     axum::serve(listener, app).await.unwrap();
-    tracing::debug!("listening on {}", addr);
+    Ok(())
 }
