@@ -9,3 +9,6 @@ brontomc.redb
 # Nix 
 ./result 
 .direnv
+
+
+# Macos specific files
