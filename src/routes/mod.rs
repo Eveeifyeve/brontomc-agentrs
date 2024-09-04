@@ -1,6 +1,7 @@
 use axum::Router;
+mod server;
 
-pub fn main(state: crate::AppState) -> Router<crate::AppState> {
+pub async fn main(state: crate::AppState) -> Router<crate::AppState> {
     Router::new()
         .route("/", axum::routing::get(root))
         .with_state(state)
