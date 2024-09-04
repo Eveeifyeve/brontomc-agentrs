@@ -1,7 +1,10 @@
 /target
 Cargo.lock
 **/*.rs.bk
-*.pdb
+
+
+# db 
+brontomc.redb
 
 # Nix 
 ./result 
