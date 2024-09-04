@@ -1,11 +1,11 @@
 { lib, fetchFromGitHub, rustPlatform }:
 
 rustPlatform.buildRustPackage rec {
-  pname = "name";
+  pname = "brotomc-agentrs";
   version = "0.1.0";
 
   src = fetchFromGitHub {
-    owner = "";
+    owner = "eveeifyeve";
     repo = pname;
     rev = version;
     hash = lib.fakeHash;
@@ -14,9 +14,9 @@ rustPlatform.buildRustPackage rec {
   cargoHash = lib.fakeHash;
 
   meta = with lib; {
-    description = "";
-    homepage = "url";
-    license = licenses.unlicense;
-    maintainers = [];
+    description = "Brontomc Agent in rust";
+    homepage = "https://github.com/eveeifyeve/brontomc-agentrs";
+    license = licenses.mit;
+    maintainers = with maintainers; [ eveeifyeve ];
   };
 }
