@@ -24,7 +24,10 @@
             cargo
             clippy
             rustfmt
+            libiconv
           ];
+
+          RUST_SRC_PATH = "${pkgs.rustPlatform.rustLibSrc}";
         };
       };
     };
