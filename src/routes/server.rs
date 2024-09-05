@@ -1,5 +1,6 @@
 use axum::{extract::State, response::IntoResponse, Json};
-use serde::Serialize;
+use bollard::{container::Config, image::CreateImageOptions};
+use futures_util::TryStreamExt;
 use serde_json::json;
 
 enum ServerPlatforms {
@@ -23,6 +24,13 @@ impl ServerPlatforms {
             _ => Err(format!("Invalid server platform: {}", platform)),
         }
     }
+
+    pub fn image(platform: &str) -> Result<String, String> {
+        match platform {
+            "vanilla" => Ok(String::from("itzg/minecraft-server:java17")),
+            _ => Err("Invalid server platform".to_string()),
+        }
+    }
 }
 
 pub struct ServerInput {
@@ -35,10 +43,40 @@ pub async fn create_server(
     State(state): State<crate::AppState>,
 ) -> impl IntoResponse {
     let server_platform = ServerPlatforms::from_str(&input.server_platfrom);
-    let mc_version = input.mc_version;
+    let DOCKER_IMAGE: String =
+        ServerPlatforms::image(&input.server_platfrom).expect("Expected image");
     match server_platform {
         Ok(server_platform) => match server_platform {
             ServerPlatforms::Vanilla => {
+                let docker = state.docker.clone();
+                let mc_version = format!("VERSION={}", input.mc_version);
+
+                let minecraft_server = Config {
+                    image: Some(DOCKER_IMAGE.as_str()),
+                    cmd: Some(vec!["/etc/confluent/docker/run"]),
+                    env: Some(vec!["EULA=TRUE", &mc_version]),
+                    ..Default::default()
+                };
+
+                docker
+                    .create_image(
+                        Some(CreateImageOptions {
+                            from_image: DOCKER_IMAGE.clone(),
+                            ..Default::default()
+                        }),
+                        None,
+                        None,
+                    )
+                    .try_collect::<Vec<_>>()
+                    .await;
+
+                let id = docker
+                    .create_container::<&str, &str>(None, minecraft_server)
+                    .await
+                    .unwrap()
+                    .id;
+                docker.start_container::<String>(&id, None).await;
+
                 let response = json!({
                     "status": "success",
                     "message": "Server created successfully",
