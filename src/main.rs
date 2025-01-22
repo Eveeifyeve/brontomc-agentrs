@@ -1,9 +1,7 @@
 use std::{process::exit, sync::Arc};
-
 use bollard::Docker;
 use redb::Database;
 use tokio::net::TcpListener;
-
 mod routes;
 
 #[derive(Clone)]
